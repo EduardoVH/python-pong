@@ -10,10 +10,10 @@ global_state = {}
 clients = set()
 player_counter = 0
 players_ready = 0
-left_player_score = 0
-right_player_score = 0
-left_players = 0
-right_players = 0
+top_player_score = 0
+bottom_player_score = 0
+top_players = 0
+bottom_players = 0
 game_over = False
 
 def check_all_ready():
@@ -29,24 +29,24 @@ async def generate_balls():
                 ball = {
                     'x': 425,
                     'y': 265,
-                    'velocity_x': random.uniform(-6, -15),
-                    'velocity_y': random.choice([-1, 1])
+                    'velocity_x': random.choice([-1, 1]),
+                    'velocity_y': random.uniform(-15, -6)
                 }
                 balls.append(ball)
 
         await asyncio.sleep(interval)
 
 async def handle_client(websocket, path):
-    global player_counter, left_players, right_players, game_over
+    global player_counter, top_players, bottom_players, game_over
     player_id = player_counter
     player_counter += 1
 
-    if left_players <= right_players:
-        global_state[player_id] = {'x': 100, 'y': 300, 'ready': False}
-        left_players += 1
+    if top_players <= bottom_players:
+        global_state[player_id] = {'x': 400, 'y': 50, 'ready': False}
+        top_players += 1
     else:
-        global_state[player_id] = {'x': 700, 'y': 300, 'ready': False}
-        right_players += 1
+        global_state[player_id] = {'x': 400, 'y': 450, 'ready': False}
+        bottom_players += 1
 
     await websocket.send(str(player_id))
 
@@ -70,14 +70,14 @@ async def handle_client(websocket, path):
             del global_state[player_id]
             print(f"Player {player_id} has been removed.")
             if player_id in global_state:
-                if global_state[player_id]['x'] == 100:
-                    left_players -= 1
+                if global_state[player_id]['y'] == 50:
+                    top_players -= 1
                 else:
-                    right_players -= 1
+                    bottom_players -= 1
         game_over = False
 
 def check_collisions():
-    global left_player_score, right_player_score, game_over
+    global top_player_score, bottom_player_score, game_over
     for player_id, player in list(global_state.items()):
         if 'x' in player and 'y' in player:
             player_x = player['x']
@@ -87,20 +87,20 @@ def check_collisions():
                 ball_x = ball['x']
                 ball_y = ball['y']
 
-                if (player_x < ball_x + 20 and player_x + 87 > ball_x and
-                        player_y < ball_y + 20 and player_y + 120 > ball_y):
-                    ball['velocity_x'] *= -1
-                    ball['velocity_y'] *= random.choice([-1, 1])
-
-                if ball_x < 0:
-                    game_over = True
-                    global_state[player_id]['winner'] = False if player['x'] == 100 else True
-                elif ball_x > 850:
-                    game_over = True
-                    global_state[player_id]['winner'] = True if player['x'] == 100 else False
-
-                if ball_y < 10 or ball_y > 520:
+                if (player_x < ball_x + 20 and player_x + 120 > ball_x and
+                        player_y < ball_y + 20 and player_y + 87 > ball_y):
                     ball['velocity_y'] *= -1
+                    ball['velocity_x'] *= random.choice([-1, 1])
+
+                if ball_y < 0:
+                    game_over = True
+                    global_state[player_id]['winner'] = False if player['y'] == 50 else True
+                elif ball_y > 530:
+                    game_over = True
+                    global_state[player_id]['winner'] = True if player['y'] == 50 else False
+
+                if ball_x < 10 or ball_x > 840:
+                    ball['velocity_x'] *= -1
 
 async def update_state():
     while True:
@@ -119,8 +119,8 @@ async def update_state():
         state = {
             'global_state': global_state,
             'balls': balls,
-            'left_player_score': left_player_score,
-            'right_player_score': right_player_score,
+            'top_player_score': top_player_score,
+            'bottom_player_score': bottom_player_score,
             'game_over': game_over
         }
 
@@ -139,3 +139,4 @@ loop = asyncio.get_event_loop()
 loop.run_until_complete(start_server)
 loop.create_task(update_state())
 loop.run_forever()
+

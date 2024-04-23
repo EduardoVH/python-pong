@@ -66,8 +66,8 @@ async def main():
                     running = False
                 elif event.type == KEYDOWN and event.key == K_SPACE:
                     global_state[player_id] = {
-                        'x': global_state.get(player_id, {}).get('x', 100),
-                        'y': global_state.get(player_id, {}).get('y', 300),
+                        'x': global_state.get(player_id, {}).get('x', 400),
+                        'y': global_state.get(player_id, {}).get('y', 50),
                         'ready': not global_state.get(player_id, {}).get('ready', False)
                     }
                     await send_movement(websocket, global_state[player_id])
@@ -75,16 +75,16 @@ async def main():
             # Get pressed keys
             keys = pygame.key.get_pressed()
 
-            if keys[K_UP] and global_state.get(player_id, {}).get('y', 300) > 0:
-                global_state[player_id]['y'] -= 20
-            if keys[K_DOWN] and global_state.get(player_id, {}).get('y', 300) < 410:
-                global_state[player_id]['y'] += 20
+            if keys[K_LEFT] and global_state.get(player_id, {}).get('x', 400) > 0:
+                global_state[player_id]['x'] -= 20
+            if keys[K_RIGHT] and global_state.get(player_id, {}).get('x', 400) < 830:
+                global_state[player_id]['x'] += 20
 
             # Send movement to the server
             if player_id in global_state:
                 await send_movement(websocket, global_state[player_id])
             else:
-                global_state[player_id] = {'x': 100, 'y': 300, 'ready': False}
+                global_state[player_id] = {'x': 400, 'y': 50, 'ready': False}
                 await send_movement(websocket, global_state[player_id])
 
             # Draw black background
@@ -92,12 +92,12 @@ async def main():
 
             # Draw players and balls
             for _, pos in global_state.items():
-                x = pos.get('x', 100)
-                y = pos.get('y', 300)
-                pygame.draw.rect(screen, WHITE, pygame.Rect(x, y, 20, 120))
+                x = pos.get('x', 400)
+                y = pos.get('y', 50)
+                pygame.draw.rect(screen, WHITE, pygame.Rect(x, y, 120, 20))
 
             for ball_info in balls:
-                ball_info['x'] -= 50
+                ball_info['y'] -= 50
                 pygame.draw.circle(screen, WHITE, (int(ball_info['x']), int(ball_info['y'])), 10)
 
             # Show start message
